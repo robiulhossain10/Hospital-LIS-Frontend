@@ -27,12 +27,12 @@
 </div>
 <script>
 // Initial fetch from REST API
-fetch('http://localhost:8080/api/lab-results')
+fetch('http://192.168.0.110:8080/api/lab-results')
     .then(res => res.json())
     .then(data => data.reverse().forEach(addResult));
 
 // WebSocket live updates
-const socket = new SockJS('http://localhost:8080/ws');
+const socket = new SockJS('http://192.168.0.110:8080/ws');
 const stompClient = Stomp.over(socket);
 stompClient.connect({}, frame => {
     console.log('Connected: ' + frame);
