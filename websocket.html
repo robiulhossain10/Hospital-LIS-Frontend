@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hospital LIS Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+<h1 class="text-3xl font-bold mb-4 text-center text-blue-700">Hospital LIS Dashboard</h1>
+<div class="overflow-x-auto bg-white rounded shadow">
+<table class="min-w-full divide-y divide-gray-200" id="lab-results">
+<thead class="bg-blue-600 text-white">
+<tr>
+<th class="px-4 py-2">Sample ID</th>
+<th class="px-4 py-2">Test Code</th>
+<th class="px-4 py-2">Value</th>
+<th class="px-4 py-2">Unit</th>
+<th class="px-4 py-2">Flag</th>
+<th class="px-4 py-2">Received At</th>
+</tr>
+</thead>
+<tbody class="bg-white divide-y divide-gray-200"></tbody>
+</table>
+</div>
+<script>
+// Initial fetch from REST API
+fetch('http://localhost:8080/api/lab-results')
+    .then(res => res.json())
+    .then(data => data.reverse().forEach(addResult));
+
+// WebSocket live updates
+const socket = new SockJS('http://localhost:8080/ws');
+const stompClient = Stomp.over(socket);
+stompClient.connect({}, frame => {
+    console.log('Connected: ' + frame);
+    stompClient.subscribe('/topic/lab-results', msg => {
+        addResult(JSON.parse(msg.body));
+    });
+});
+
+function addResult(result) {
+    const tbody = document.querySelector('#lab-results tbody');
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-blue-50 transition';
+    row.innerHTML = `
+        <td class="px-4 py-2">${result.sampleId}</td>
+        <td class="px-4 py-2">${result.testCode}</td>
+        <td class="px-4 py-2 font-semibold">${result.value}</td>
+        <td class="px-4 py-2">${result.unit}</td>
+        <td class="px-4 py-2 text-red-600 font-bold">${result.flag || ''}</td>
+        <td class="px-4 py-2">${new Date(result.receivedAt).toLocaleString()}</td>
+    `;
+    tbody.prepend(row);
+    if(tbody.rows.length > 50) tbody.deleteRow(50);
+}
+
+</script>
+</body>
+</html>
